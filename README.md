@@ -10,3 +10,7 @@ You can pass arguments to the program
 `-s` Set to include symbols
 
 `-n` Set to include numbers
+
+example 
+`pwdgen.py -l 16 -g 20 -sn`
+will return 20 passwords, 16 characters each using symbols and numbers
