@@ -1,38 +1,71 @@
-import string
 import argparse
-import random
-
-# Create arguments
-parser = argparse.ArgumentParser(description = "Create strong passwords using a simple string builder")
-parser.add_argument("-l", help="Set length of generated passwords", type=int) # sets option for length of password
-parser.add_argument("-g", help="Set number of generated passwords", type=int) # sets option for how many passwords to generate
-parser.add_argument("-s", help="Set use of symbols in generated passwords", action="store_true") # if used will generate passwords with symbols in .punctuation 
-parser.add_argument("-n", help="Set use of numbers in generated passwords", action="store_true") # if used will generate passwords with numbers 0-9
-
-args = parser.parse_args()
-
-# Set variables to be used in main function, by default with no args passed will generate 1 password 8 characters long with no symbols or numbers
-password_length = args.l or 8
-number_of_passwords = args.g or 1
-include_symbols = args.s
-include_numbers = args.n
+import string
+import secrets
+from typing import Callable
 
 
-# Main function that takes arguments and generates a string of random letters, numbers and symbols
-def generate_password(length, include_symbols, include_numbers):
+def positive_int(value: str) -> int:
+    parsed_value = int(value)
+    if parsed_value < 1:
+        raise argparse.ArgumentTypeError("value must be >= 1")
+    return parsed_value
+
+
+def build_character_pool(include_symbols: bool, include_numbers: bool) -> str:
     characters = string.ascii_letters
-	
     if include_symbols:
-       characters += string.punctuation
-		
+        characters += string.punctuation
     if include_numbers:
         characters += string.digits
-
-    password = ''.join(random.choice(characters) for _ in range (length))
-    return password
-
-# calls generate_password function as many times as required by the -g argument
-passwords = '\n'.join(generate_password(password_length, include_symbols, include_numbers) for _ in range(number_of_passwords))
+    return characters
 
 
-print(passwords)
+def generate_password(length: int, character_pool: str, chooser: Callable[[str], str]) -> str:
+    return "".join(chooser(character_pool) for _ in range(length))
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Create strong passwords using a simple string builder"
+    )
+    parser.add_argument(
+        "-l",
+        "--length",
+        help="Length of each generated password",
+        type=positive_int,
+        default=8,
+    )
+    parser.add_argument(
+        "-g",
+        "--count",
+        help="Number of passwords to generate",
+        type=positive_int,
+        default=1,
+    )
+    parser.add_argument(
+        "-s",
+        "--symbols",
+        help="Include symbols (punctuation)",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-n",
+        "--numbers",
+        help="Include numbers (0-9)",
+        action="store_true",
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+
+    character_pool = build_character_pool(args.symbols, args.numbers)
+    chooser = secrets.choice  # cryptographically secure selection
+
+    for _ in range(args.count):
+        print(generate_password(args.length, character_pool, chooser))
+
+
+if __name__ == "__main__":
+    main()
